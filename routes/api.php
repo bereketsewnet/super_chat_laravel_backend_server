@@ -10,11 +10,12 @@ Route::get('/user', function (Request $request) {
 
 // if you need you dirctly set like this
 // Route::get('/test', 'App\Http\Controllers\TestController@index');
-Route::get('/loginn', 'App\Http\Controllers\Api\LoginController@login');
 
 // if you need creat group with fasad use like this 
 // first you will crete new folder inside Controllers
 Route::group(['namespace'=>'App\Http\Controllers\Api'], function() {
     Route::any('/login', 'LoginController@login');
     Route::any('/get_profile', 'LoginController@get_profile');
+    Route::any('/contact', 'LoginController@contact')->middleware('is_login');
+
 });
