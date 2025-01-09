@@ -71,7 +71,7 @@ class CheckUser
             'user_type' => $res_user->type,
             'user_name' => $res_user->name,  
             'user_avatar' => $res_user->avatar,  
-            'user_token' => $res_user->access_token,  
+            'user_token' => $res_user->token,  
         ]);
 
         // Allow the request to proceed
