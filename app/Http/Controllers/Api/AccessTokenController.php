@@ -11,7 +11,9 @@ class AccessTokenController extends Controller
         
       //  $token = $request->user_token;
         $channelName = $request->input("channel_name");
+        // my app id = 0aa66f1e657d468fa1bff89469fb348d
         $appID = "e11666dd3c4346568b67b80823bcca50";
+        // my certification = "" i dont know
         $appCertificate = "adc4eede27864e77977574a9ac652338";
        // $channelName = $token;
         $uid = 0;

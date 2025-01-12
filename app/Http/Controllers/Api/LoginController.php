@@ -106,7 +106,7 @@ class LoginController extends Controller
             'online',
             'token',
             'name'
-        )->where('access_token', '!=', $token)->get();
+        )->where('token', '!=', $token)->get();
 
         return
             [
@@ -152,17 +152,18 @@ class LoginController extends Controller
         try {
             if (!empty($device_token)) {
                 $messaging = app("firebase.messaging");
-                if ($call_type == "cancel") {
+                if ($call_type == 'cancel') {
+
                     $message = CloudMessage::fromArray([
-                        'token' => $device_token, // optional
+                        'token' => $device_token,
                         'data' => [
                             'token' => $user_token,
                             'avatar' => $user_avatar,
                             'name' => $user_name,
+                            'doc_id' => $doc_id,
                             'call_type' => $call_type,
                         ]
                     ]);
-
                     $messaging->send($message);
                 } else if ($call_type == 'voice') {
 
@@ -187,6 +188,7 @@ class LoginController extends Controller
                 }
                 $messaging->send($message);
                 return response()->json(['code' => 0, 'data' => $to_token, 'msg' => 'success']);
+
             } else {
                 return response()->json(['code' => -1, 'data' => '', 'msg' => 'device token is empty']);
             }
@@ -195,17 +197,39 @@ class LoginController extends Controller
         }
     }
 
-    public function bind_fcmtoken(Request $request)
-    {
+    public function bind_fcmtoken(Request $request){
         $token = $request->user_token;
         $fcmtoken = $request->input("fcmtoken");
 
-        if (empty($fcmtoken)) {
-            return ["code" => -1, "data" => "", "msg" => "error getting the token"];
+        if(empty($fcmtoken))
+        {
+            return ["code"=>-1, "data"=>"", "msg"=>"error getting the token"];
         }
 
-        $res = DB::table('users')->where("token", "=", $token)->update(["fcmtoken" => $fcmtoken]);
+       $res = DB::table('users')->where("token", "=", $token)->update(["fcmtoken"=>$fcmtoken]);
 
-        return ["code" => 0, "data" => $token, "msg" => "success"];
+        return ["code"=>0, "data"=>$token, "msg"=>"success"];
     }
+
+    public function upload_photo(Request $request) {
+        $file = $request->file('file');
+
+        try
+        {
+            $extenstion = $file->getClientOriginalExtension(); // get png or jpeg or jpg.... 
+            $fullFileName = uniqid().'.'.$extenstion; // bind name with extention
+            $timeDir = date("Ymd"); // create dir or folder to store image
+            $file->storeAs($timeDir, $fullFileName, ["disk"=>"public"]); // set folder, name and permission and upload
+            $url = env("APP_URL")."/uploads/".$timeDir.'/'.$fullFileName; // create url
+
+
+            return ['code'=>0, 'data'=>$url, 'msg'=> 'success image upload'];
+
+        }catch (Exception $e)
+        {
+            return ['code'=>-1, 'data'=>'', 'msg'=> 'error uploading image'];
+        }
+    }
+
+    
 }
