@@ -10,7 +10,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Contract\Messaging;
+use App\Models\User;
 
+use function PHPSTORM_META\map;
 
 class LoginController extends Controller
 {
@@ -179,16 +181,37 @@ class LoginController extends Controller
                         'android' => [
                             'priority' => 'high',
                             'notification' => [
-                                'channel_id' => 'yyy',
+                                'channel_id' => 'come.example.super_chat.message',
                                 'title' => 'voice call made by' . $user_name,
                                 'body' => 'Please click to answer the voice call'
                             ],
                         ]
                     ]);
+                } else if ($call_type == 'video') {
+
+                    $message = CloudMessage::fromArray([
+                        'token' => $device_token,
+                        'data' => [
+                            'token' => $user_token,
+                            'avatar' => $user_avatar,
+                            'name' => $user_name,
+                            'doc_id' => $doc_id,
+                            'call_type' => $call_type,
+                        ],
+                        'android' => [
+                            'priority' => 'high',
+                            'notification' => [
+                                'channel_id' => 'come.example.super_chat.message',
+                                'title' => 'video call made by' . $user_name,
+                                'body' => 'Please click to answer the video call'
+                            ],
+                        ]
+                    ]);
                 }
+
+
                 $messaging->send($message);
                 return response()->json(['code' => 0, 'data' => $to_token, 'msg' => 'success']);
-
             } else {
                 return response()->json(['code' => -1, 'data' => '', 'msg' => 'device token is empty']);
             }
@@ -197,39 +220,71 @@ class LoginController extends Controller
         }
     }
 
-    public function bind_fcmtoken(Request $request){
+    public function bind_fcmtoken(Request $request)
+    {
         $token = $request->user_token;
         $fcmtoken = $request->input("fcmtoken");
 
-        if(empty($fcmtoken))
-        {
-            return ["code"=>-1, "data"=>"", "msg"=>"error getting the token"];
+        if (empty($fcmtoken)) {
+            return ["code" => -1, "data" => "", "msg" => "error getting the token"];
         }
 
-       $res = DB::table('users')->where("token", "=", $token)->update(["fcmtoken"=>$fcmtoken]);
+        $res = DB::table('users')->where("token", "=", $token)->update(["fcmtoken" => $fcmtoken]);
 
-        return ["code"=>0, "data"=>$token, "msg"=>"success"];
+        return ["code" => 0, "data" => $token, "msg" => "success"];
     }
 
-    public function upload_photo(Request $request) {
+    public function upload_photo(Request $request)
+    {
         $file = $request->file('file');
 
-        try
-        {
+        try {
             $extenstion = $file->getClientOriginalExtension(); // get png or jpeg or jpg.... 
-            $fullFileName = uniqid().'.'.$extenstion; // bind name with extention
+            $fullFileName = uniqid() . '.' . $extenstion; // bind name with extention
             $timeDir = date("Ymd"); // create dir or folder to store image
-            $file->storeAs($timeDir, $fullFileName, ["disk"=>"public"]); // set folder, name and permission and upload
-            $url = env("APP_URL")."/uploads/".$timeDir.'/'.$fullFileName; // create url
+            $file->storeAs($timeDir, $fullFileName, ["disk" => "public"]); // set folder, name and permission and upload
+            $url = env("APP_URL") . "/uploads/" . $timeDir . '/' . $fullFileName; // get url and send to front-end
 
 
-            return ['code'=>0, 'data'=>$url, 'msg'=> 'success image upload'];
-
-        }catch (Exception $e)
-        {
-            return ['code'=>-1, 'data'=>'', 'msg'=> 'error uploading image'];
+            return ['code' => 0, 'data' => $url, 'msg' => 'success image upload'];
+        } catch (Exception $e) {
+            return ['code' => -1, 'data' => '', 'msg' => 'error uploading image'];
         }
     }
 
+    public function update_profile(Request $request){
+        $token = $request->user_token;
     
+        $validator = Validator::make($request->all(), [
+          'online' => 'required',
+          'description' => 'required',
+          'name' => 'required',
+          'avatar' => 'required',
+        ]);
+        if ($validator->fails()) {
+          return ["code" => -1, "data" => "", "msg" => $validator->errors()->first()];
+        }
+        try {
+          
+    
+          $validated = $validator->validated();
+          
+          $map=[];
+          $map["token"] = $token;
+    
+          $res = DB::table("users")->where($map)->first();
+          if(!empty($res)){
+      
+            $validated["updated_at"] = Carbon::now();
+            DB::table("users")->where($map)->update($validated);
+          
+            return ["code" => 0, "data" => "", "msg" => "success"];
+          }
+    
+          return ["code" => -1, "data" => "", "msg" => "error"];
+    
+        } catch (Exception $e) {
+          return ["code" => -1, "data" => "", "msg" => "error"];
+        }
+      }
 }

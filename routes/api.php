@@ -20,6 +20,7 @@ Route::group(['namespace'=>'App\Http\Controllers\Api'], function() {
     Route::any('/send_notice','LoginController@send_notice')->middleware('is_login');
     Route::any('/bind_fcmtoken','LoginController@bind_fcmtoken')->middleware('is_login');
     Route::any('/upload_photo','LoginController@upload_photo')->middleware('is_login');
+    Route::any('/update_profile','LoginController@update_profile')->middleware('is_login');
     Route::any('/get_rtc_token','AccessTokenController@get_rtc_token')->middleware('is_login');
 
 });
